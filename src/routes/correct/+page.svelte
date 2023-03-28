@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { VisXYContainer, VisStackedBar, VisAxis } from '@unovis/svelte';
-	import { Scale } from '@unovis/ts';
+	import { VisXYContainer, VisStackedBar, VisAxis, VisBulletLegend } from '@unovis/svelte';
+	import { Axis, Scale } from '@unovis/ts';
 	import { onMount } from 'svelte';
 	import { writable, derived } from 'svelte/store';	
 
@@ -24,7 +24,7 @@
 	$: get_corrections(words, word_index, ed_2, curr_req_id)
 		.then(([req_id, c]) => {
 			if (req_id == curr_req_id && c.length > 0) {
-				corrs = c.slice(0, 15);
+				corrs = c.slice(0, 10);
 				loading = false;
 			}
 		})
@@ -84,11 +84,24 @@
 	function get_words(s: string): string[] {
 		return s.split(' ');
 	}
+
+
+	/// Replaces the word at the given index with the correction.
+	function replace_word(i: number) {
+		words[(word_index + words.length) % words.length] = corrs[i].term;
+		text = words.join(' ');
+	}
+
+	const yAxisEvents = {
+		[Axis.selectors.tick]: {
+			click: (i) => replace_word(-i)
+		}
+	}
 </script>
 
-<div class="container h-full w-full mx-auto justify-center items-center">
-	<div class="grid grid-cols-1 grid-rows-6 h-full w-full">
-		<div class="row-span-2 my-auto space-y-10 py-10">
+<div class="container h-full w-full mx-10">
+	<div class="grid grid-cols-1 grid-rows-6 h-full w-full place-content-center">
+		<div class="row-span-2 space-y-1 pb-10 border-b-0 border-surface-500">
 			<div class="w-full mx-auto justify-center items-center">
 				<h1 class="unstyled text-6xl font-bold text-center gradient-heading">AISpell</h1>				
 				<h2 class="unstyled text-3xl font-italic text-center">Truly intelligent spell check</h2>
@@ -112,10 +125,10 @@
 				</label>
 			</div>
 		</div>
-		<div class="row-span-4 justify-center mb-10 font-mono">
+		<div class="row-span-3 mb-10 font-mono">
 			<div class="h-full">
 			{#if loaded}				
-					<div class="mb-1">
+					<div class="mx-auto mb-1 w-1/2">
 						{#each words as word, i (i)}
 							{#if (word_index + words.length) % words.length == i}
 								<button class="word-active word">{word}</button>
@@ -125,17 +138,17 @@
 								>
 							{/if}
 						{/each}
-					</div>
-					<div class="h-full pb-3 {loading ? 'blur-md' : 'blur-none'}">
+					</div>					
+					<div class="h-full w-1/2 mx-auto pb-3 {loading ? 'blur-md' : 'blur-none'}">
 						<VisXYContainer data={corrs} height="100%" xDomain={[0, 1]}>
 							<VisAxis
 								type="y"
 								data={corrs}
 								gridLine={undefined}
 								tickValues={corrs.map((_, i) => -i)}
-								tickFormat={(i) => corrs[-i].term}
-								label="Correction"
+								tickFormat={(i) => corrs[-i].term}								
 								labelMargin={20}
+								events = {yAxisEvents}
 							/>
 							<VisAxis
 								type="x"
@@ -143,7 +156,12 @@
 								position="top"
 								domainLine={true}
 								label="Probability"
-								tickValues={[0, 0.25, 0.5, 0.75, 1]}
+								tickValues={[0, 0.25, 0.5, 0.75, 1]}								
+							/>
+							<VisBulletLegend
+							items={[{name: 'Keyboard'}, {name: 'Language Model'}]}
+							labelFontSize="large"
+							bulletSize={'1rem'}
 							/>
 							<VisStackedBar
 								data={corrs}
@@ -151,34 +169,34 @@
 								y={[kbd_component, lm_component]}
 								orientation="horizontal"
 								maxBarWidth={100}
-							/>
+								/>
 						</VisXYContainer>
 					</div>				
 			{/if}
 			</div>
-			<div class="table-container font-mono py-10">
-				<table class="table table-hover">
-					<thead>
-						<tr>
-							<th>Term</th>
-							<th>Prob</th>
-							<th>LM Prob</th>
-							<th>KBD Prob</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each corrs as corr (corr.term)}
-							<tr>
-								<td>{corr.term}</td>
-								<td>{corr.prob}</td>
-								<td>{corr.lm_prob}</td>
-								<td>{corr.kbd_prob}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
 		</div>
+	</div>
+	<div class="table-container font-mono py-10">
+		<table class="table table-hover">
+			<thead>
+				<tr>
+					<th>Term</th>
+					<th>Prob</th>
+					<th>LM Prob</th>
+					<th>KBD Prob</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each corrs as corr (corr.term)}
+					<tr>
+						<td>{corr.term}</td>
+						<td>{corr.prob}</td>
+						<td>{corr.lm_prob}</td>
+						<td>{corr.kbd_prob}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	</div>
 </div>
 
@@ -194,8 +212,10 @@
 
 	:root {
 		--vis-font-family: theme('fontFamily.mono');
-		--vis-axis-tick-label-color: theme('colors.surface.600');
+		--vis-axis-tick-label-color: theme('colors.surface.600');		
 		--vis-dark-axis-tick-label-color: theme('colors.surface.300');
+		--vis-axis-tick-color: theme('colors.surface.600');
+		--vis-dark-axis-tick-color: theme('colors.surface.300');
 		--vis-axis-tick-label-font-size: theme('fontSize.lg');		
 
 		--vis-color0: theme('colors.primary.600');
