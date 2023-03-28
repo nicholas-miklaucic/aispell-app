@@ -1,38 +1,35 @@
-# create-svelte
+# AISpell
+## Truly intelligent spell checking
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+![Demo](demo.gif)
 
-## Creating a project
+When you make a typo, two things happened:
+ - You meant to type one word.
+ - You typed something else instead.
 
-If you're seeing this, you've probably already done this step. Congrats!
+AISpell models both of these steps in order to provide more accurate spelling correction. When it looks at a word, it considers all of the possible words that are one or two typos away from what was actually typed.
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+Then, for each of those potential corrections:
+ 
+ - The probability of accidentally typing the observed text instead of the potential correction is calculated using a model that considers the QWERTY keyboard layout.
+ - Then, a language model (not unlike the one used in ChatGPT, although much smaller so it can run more quickly) computes the probability that the correction was what the typist meant.
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+These probabilities are multiplied for each potential completion, resulting in a distribution over potential completions that can be used for correction or alerting the user.
 
-## Developing
+Prior approaches tend to only consider one source of information.  Purely neural-network-based spellcheck tools don't consider how unlikely certain mistakes would actually be:
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+![xkcd joke](https://imgs.xkcd.com/comics/keyboard_mash.png)
 
-```bash
-npm run dev
+On the other hand, traditional spellcheck doesn't consider the context of what you're typing. If someone types "I don't know why I went **ther**", we know they probably meant to type "there" and not "their" or "ether".
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+ <hr />
 
-## Building
+AISpell is still in development. The target use case is realtime spell-checking, although the underlying approach should work equally well in batched contexts (i.e., checking a document.)
 
-To create a production version of your app:
+Directions for further development:
 
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+ - Modern language models are large, and using them in a real-time environment on consumer hardware requires significant optimization. More work can be done in this area.
+ - Tweaking the correction part of the API (when to auto-correct) needs to be done, perhaps with a dataset.
+ - Dealing with punctuation and word-boundary errors needs to be better.
+ - Theoretically, both the language and keyboard models could be fine-tuned to specific people. A user interface and infrastructure to do this would be a killer feature.
+ - A drop-in replacement for hunspell or similar CLI tools that would allow AISpell to be used in that context would be great.

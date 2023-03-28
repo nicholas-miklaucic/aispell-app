@@ -99,7 +99,7 @@
 	}
 </script>
 
-<div class="container h-full w-full mx-10">
+<div class="container h-full w-full mx-auto">
 	<div class="grid grid-cols-1 grid-rows-6 h-full w-full place-content-center">
 		<div class="row-span-2 space-y-1 pb-10 border-b-0 border-surface-500">
 			<div class="w-full mx-auto justify-center items-center">
