@@ -33,5 +33,9 @@
 		"typescript": "^5.0.0",
 		"vite": "^4.2.0"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"@unovis/svelte": "^1.0.3",
+		"@unovis/ts": "^1.0.3"
+	}
 }
